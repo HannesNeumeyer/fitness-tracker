@@ -38,4 +38,8 @@ export class TrainingService {
     // returns a copy of this object, like splice of an array
     return { ...this.runningExercise }
   }
+
+  getExercises(){
+    return this.exercises.slice();
+  }
 }
