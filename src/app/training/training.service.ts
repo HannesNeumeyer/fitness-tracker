@@ -7,25 +7,27 @@ import { AngularFirestore } from "angularfire2/firestore";
 export class TrainingService {
   exerciseChanged = new Subject<Exercise>();
   exercisesChanged = new Subject<Exercise[]>();
+  finishedExercisesChanged = new Subject<Exercise[]>();
   private availableExercises: Exercise[] = []
   private runningExercise: Exercise;
-  private exercises: Exercise[] = [];
 
   constructor(private db: AngularFirestore) {}
 
   startExercise(selectedId: string){
+    // for working with one document instead of a collection:
+    // this.db.doc('availableExercises/' + selectedId).update({lastSelected: new Date()})
     this.runningExercise = this.availableExercises.find(ex => ex.id === selectedId);
     this.exerciseChanged.next({ ...this.runningExercise})
   }
 
   completeExercise(){
-    this.exercises.push({ ...this.runningExercise, date: new Date(), state: 'completed' });
+    this.addDataToDatabase({ ...this.runningExercise, date: new Date(), state: 'completed' });
     this.runningExercise = null;
     this.exerciseChanged.next(null);
   }
 
   cancelExercise(progress: number){
-    this.exercises.push({ ...this.runningExercise,
+    this.addDataToDatabase({ ...this.runningExercise,
       duration: this.runningExercise.duration * (progress / 100),
       calories:this.runningExercise.calories * (progress / 100), 
       date: new Date(),
@@ -39,7 +41,7 @@ export class TrainingService {
     return { ...this.runningExercise }
   }
 
-  getExercises(){
+  fetchExercises(){
     this.db.collection('availableExercises').snapshotChanges().map(docArray => {
       return docArray.map(doc => {
         return {
@@ -54,5 +56,15 @@ export class TrainingService {
       this.exercisesChanged.next([...this.availableExercises])
       // don't need to unsubscribe here because old subscription is overwritten (only shows up once per console.log)
     })
+  }
+
+  fetchCompletedExercises(){
+    this.db.collection('finishedExercises').valueChanges().subscribe((exercises: Exercise[]) => {
+      this.finishedExercisesChanged.next(exercises)
+    })
+  }
+
+  private addDataToDatabase(exercise: Exercise){
+    this.db.collection('finishedExercises').add(exercise);
   }
 }

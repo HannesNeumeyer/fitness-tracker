@@ -19,7 +19,7 @@ exerciseSubscription: Subscription;
 
   ngOnInit() {
     this.exerciseSubscription = this.trainingService.exercisesChanged.subscribe(exercises => this.exercises = exercises);
-    this.trainingService.getExercises();
+    this.trainingService.fetchExercises();
   }
 
   onStartTraining(form: NgForm){
